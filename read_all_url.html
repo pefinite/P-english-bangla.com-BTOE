@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="http://localhost/pefiniteJS.js"></script>
+</head>
+<body>
+<script>
+
+    pefinite.ready(function (){
+       pefinite.ajax("http://localhost/english_bangla.com(Bangla to English)/read_url_data.php", "https://www.english-bangla.com/browse/bntoen").post(function (data){
+            data = (new DOMParser().parseFromString(data, "text/html"));
+            data = data.getElementsByClassName("a-z")[0].getElementsByTagName("a");
+            for (let x = 0; x < data.length; x++) {
+                readEachLetterAllWords(data[x].href);
+            }
+       });
+    });
+
+    function readEachLetterAllWords(url) {
+        let nexUrl = null;
+        pefinite.ajax("http://localhost/english_bangla.com(Bangla to English)/read_url_data.php", url).syncPost(function (data){
+            data = (new DOMParser().parseFromString(data, "text/html"));
+            let pagination = data.getElementsByClassName("pagination");
+            data = data.getElementById("cat_page").getElementsByTagName("ul")[0].getElementsByTagName("a");
+            for(let x = 0; x < data.length; x++) {
+                readEachWord(data[x].href);
+            }
+            data = pagination[0].getElementsByTagName("a");
+            for (let x = 0; x < data.length; x++) {
+                if(data[x].rel === 'next') {
+                    nexUrl = data[x].href;
+                }
+            }
+        });
+        if(nexUrl) readEachLetterAllWords(nexUrl);
+    }
+    function readEachWord(uri) {
+        pefinite.ajax("http://localhost/english_bangla.com(Bangla to English)/read_url_data.php", uri).syncPost(function (data){
+            data = (new DOMParser().parseFromString(data, "text/html"));
+            data = data.getElementById("w_info");
+            let word = data.getElementsByClassName("stl3")[0].innerHTML;
+            word = word.replace("&nbsp;", "").trim();
+            word = word.replace(/[১২৩৪৫৬৭৮৯০]/g, "");
+            let meaning = data.getElementsByClassName("format1")[0].textContent;
+            meaning = meaning.trim();
+            let details = {
+              word: word,
+              meaning: meaning
+            };
+            pefinite.ajax("http://localhost/english_bangla.com(Bangla to English)/post_all_word.php", JSON.stringify(details)).syncPost();
+        });
+    }
+
+</script>
+</body>
+</html>
